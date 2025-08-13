@@ -1,9 +1,10 @@
-import firebase from 'firebase/compat/app';
-import 'firebase/compat/auth';
-import 'firebase/compat/firestore';
-import 'firebase/compat/storage';
+import { initializeApp } from 'firebase/app';
+import { getAuth, RecaptchaVerifier, ConfirmationResult, User, signInWithPhoneNumber } from 'firebase/auth';
+import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, deleteDoc, query, where, getDocs, orderBy, writeBatch, serverTimestamp, Timestamp, onSnapshot } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // --- Konfigurasi Firebase ---
+// Konfigurasi ini dianggap publik dan aman untuk disimpan di frontend.
 const firebaseConfig = {
     apiKey: "AIzaSyD9q0oX-cYsMDmVVQeTq7c_vtDWG9xpcvw",
     authDomain: "altomedia-8f793.firebaseapp.com",
@@ -14,9 +15,59 @@ const firebaseConfig = {
 };
 
 // --- Inisialisasi Firebase ---
-const app = firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-const storage = firebase.storage();
+// Inisialisasi aplikasi Firebase dengan gaya modular (SDK v9+)
+const app = initializeApp(firebaseConfig);
 
-export { app, auth, db, storage, firebase };
+// Ekspor service yang sudah diinisialisasi untuk digunakan di file lain (seperti index.tsx)
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const storage = getStorage(app);
+
+// Ekspor tipe dan fungsi spesifik agar mudah diimpor
+export {
+    RecaptchaVerifier,
+    signInWithPhoneNumber
+};
+
+// Ekspor tipe data dari Firebase untuk digunakan di TypeScript
+export type {
+    User,
+    ConfirmationResult
+};
+
+// Ekspor fungsi dan objek Firestore untuk kemudahan
+export {
+    collection,
+    doc,
+    getDoc,
+    setDoc,
+    updateDoc,
+    deleteDoc,
+    query,
+    where,
+    getDocs,
+    orderBy,
+    writeBatch,
+    serverTimestamp,
+    Timestamp,
+    onSnapshot
+};
+
+// Ekspor fungsi dan objek Storage untuk kemudahan
+export {
+    ref,
+    uploadBytes,
+    getDownloadURL
+};
+
+// Anda bisa membuat objek 'firebase' tiruan jika beberapa bagian kode lama masih membutuhkannya,
+// tapi praktik terbaik adalah mengimpor langsung apa yang Anda butuhkan.
+export const firebase = {
+    auth,
+    firestore: {
+        FieldValue: {
+            serverTimestamp
+        },
+        Timestamp
+    }
+};
