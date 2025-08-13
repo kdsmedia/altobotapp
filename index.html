@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ALTOBOT</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css" />
+    <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@^1.13.0",
+    "firebase/app": "https://esm.sh/firebase@10.12.2/app",
+    "firebase/auth": "https://esm.sh/firebase@10.12.2/auth",
+    "firebase/firestore": "https://esm.sh/firebase@10.12.2/firestore",
+    "firebase/": "https://esm.sh/firebase@^12.1.0/",
+    "http": "https://esm.sh/http@^0.0.1-security",
+    "ws": "https://esm.sh/ws@^8.18.3",
+    "url": "https://esm.sh/url@^0.11.4",
+    "fs": "https://esm.sh/fs@^0.0.1-security",
+    "path": "https://esm.sh/path@^0.12.7",
+    "whatsapp-web.js": "https://esm.sh/whatsapp-web.js@^1.32.0",
+    "qrcode-terminal": "https://esm.sh/qrcode-terminal@^0.12.0"
+  }
+}
+</script>
+  </head>
+  <body>
+    <!-- Main App Container -->
+    <div class="app-container">
+      <header class="chat-header">
+        ALTOBOT
+        <div id="user-wallet-info" class="hidden">
+            <span id="user-balance"></span> | <button id="open-wallet-btn">Dompet</button> | <button id="logout-btn">Keluar</button>
+        </div>
+      </header>
+
+      <div id="notification-banner" class="notification-banner hidden"></div>
+
+      <div id="main-content" class="hidden">
+        <div id="messages-container" class="messages-container">
+          <!-- Welcome Screen -->
+          <div id="welcome-container" class="welcome-container">
+            <div class="system-message">
+              <h3>Selamat Datang di ALTOBOT!</h3>
+              <p>Pilih salah satu fitur di bawah untuk memulai. Fitur dengan tanda 🎬 memerlukan langganan.</p>
+            </div>
+            <div class="feature-menu-container">
+              <div class="feature-card" data-feature="image_prompt">
+                <div class="icon">🖼️</div>
+                <h4>Generator Prompt Gambar</h4>
+              </div>
+              <div class="feature-card" data-feature="video_menu">
+                <div class="icon">🎬</div>
+                <h4>Generator Prompt Video</h4>
+              </div>
+              <div class="feature-card" data-feature="chatbot">
+                <div class="icon">💬</div>
+                <h4>Chat Bot</h4>
+              </div>
+              <div class="feature-card" data-feature="olshop">
+                <div class="icon">🛒</div>
+                <h4>Olshop</h4>
+              </div>
+            </div>
+          </div>
+
+          <!-- Video Sub-menu -->
+          <div id="video-submenu-container" class="welcome-container hidden">
+              <div class="system-message">
+                  <button id="back-to-main-menu" class="back-button">&larr; Kembali</button>
+                  <h3>Pilih Tipe Generator Video</h3>
+                  <p>Pilih platform video AI untuk membuat prompt. Memerlukan langganan aktif.</p>
+              </div>
+              <div class="feature-menu-container">
+                  <div class="feature-card" data-feature="veo3" data-requires-subscription="true">
+                      <div class="icon icon-text">VEO</div>
+                      <h4>Prompt Veo</h4>
+                  </div>
+                  <div class="feature-card" data-feature="dalle" data-requires-subscription="true">
+                      <div class="icon icon-text">D·E</div>
+                      <h4>Prompt Dall-E</h4>
+                  </div>
+              </div>
+          </div>
+          
+          <div id="loading-indicator-container"></div>
+        </div>
+
+        <!-- Olshop View -->
+        <div id="olshop-container" class="page-container hidden">
+          <div class="page-header">
+            <button id="olshop-back-to-main" class="back-button-page">&larr;</button>
+            <h1>Toko Online</h1>
+            <button id="show-order-history-btn" class="header-action-btn">Riwayat Pesanan</button>
+          </div>
+          <div id="product-list" class="product-list">
+            <!-- Products will be rendered here by JS -->
+          </div>
+        </div>
+
+        <!-- Product Detail View -->
+        <div id="product-detail-container" class="page-container hidden">
+          <div class="page-header">
+            <button id="product-detail-back-btn" class="back-button-page">&larr;</button>
+            <h1>Detail Produk</h1>
+          </div>
+          <div id="product-detail-content" class="product-detail-content">
+            <!-- Product details will be rendered here by JS -->
+          </div>
+        </div>
+
+        <!-- Checkout Page -->
+        <main id="checkout-page" class="page-container hidden">
+            <div class="page-header">
+                <button id="checkout-back-btn" class="back-button-page">&larr;</button>
+                <h1>Checkout</h1>
+            </div>
+            <div class="checkout-content">
+                <div class="p-4">
+                    <h3 class="font-bold text-lg mb-4">Alamat Pengiriman</h3>
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <form id="shipping-form" class="space-y-4 text-sm">
+                            <div>
+                                <label class="font-bold block mb-1">Nama Lengkap</label>
+                                <input type="text" id="shipping-name" name="nama" required class="w-full p-2 border rounded">
+                            </div>
+                            <div>
+                                <label class="font-bold block mb-1">Nomor Ponsel</label>
+                                <input type="tel" id="shipping-phone" name="telepon" required class="w-full p-2 border rounded">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="font-bold block mb-1">Provinsi</label>
+                                    <input type="text" id="shipping-provinsi" name="provinsi" required class="w-full p-2 border rounded">
+                                </div>
+                                <div>
+                                    <label class="font-bold block mb-1">Kota/Kabupaten</label>
+                                    <input type="text" id="shipping-kota" name="kota" required class="w-full p-2 border rounded">
+                                </div>
+                            </div>
+                             <div>
+                                <label class="font-bold block mb-1">Kecamatan</label>
+                                <input type="text" id="shipping-kecamatan" name="kecamatan" required class="w-full p-2 border rounded">
+                            </div>
+                            <div>
+                                <label class="font-bold block mb-1">Desa/Kelurahan</label>
+                                <input type="text" id="shipping-desa" name="desa" required class="w-full p-2 border rounded">
+                            </div>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label class="font-bold block mb-1">RT</label>
+                                    <input type="text" name="rt" class="w-full p-2 border rounded">
+                                </div>
+                                <div>
+                                    <label class="font-bold block mb-1">RW</label>
+                                    <input type="text" name="rw" class="w-full p-2 border rounded">
+                                </div>
+                                <div>
+                                    <label class="font-bold block mb-1">Kode Pos</label>
+                                    <input type="text" name="kodepos" required class="w-full p-2 border rounded" inputmode="numeric">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="font-bold block mb-1">Alamat Lengkap (Nama Jalan, No Rumah, dll)</label>
+                                <textarea name="alamat" required class="w-full p-2 border rounded" rows="3"></textarea>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="p-4">
+                    <h3 class="font-bold text-lg mb-4">Produk Dipesan</h3>
+                    <div id="checkout-items-summary" class="bg-white p-4 rounded-lg shadow space-y-3"></div>
+                </div>
+
+                <div class="p-4">
+                    <h3 class="font-bold text-lg mb-4">Pembayaran</h3>
+                    <div class="bg-white p-4 rounded-lg shadow space-y-2 text-sm">
+                        <p>Silakan lakukan pembayaran ke QRIS di bawah, lalu <strong>unggah bukti transfer</strong>.</p>
+                        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgHwO_-Mp4mmE5tIQgvrs8ZzsUiKwMWROUa8XAMFdKpYGzqxAXR9ciCYRZ9LBt-i1ukxzhTVQw_mcKbCm5jzFe6vySjmowjplpTMJBwV5HVfETSH6WwqlWHY2BEn_rMJn4jXXRX5ylMRwDGPssCFolj5akwy1Ny-Y3_JHFQZK3Jdf4HzaFwuBRXqwcDVhI/s407/qris.jpg" alt="QRIS Payment Code" class="qris-image">
+                        <div class="form-group">
+                            <label for="checkout-payment-proof-input">Unggah Bukti Pembayaran (Gambar)</label>
+                            <input type="file" id="checkout-payment-proof-input" name="paymentProof" accept="image/png, image/jpeg, image/jpg" class="file-input-hidden" required>
+                            <label for="checkout-payment-proof-input" class="file-input-label">Pilih File...</label>
+                            <img id="checkout-payment-proof-preview" class="payment-proof-preview hidden" alt="Pratinjau Bukti Pembayaran"/>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 pt-0">
+                    <h3 class="font-bold text-lg mb-2">Rincian Pembayaran</h3>
+                    <div class="bg-white p-4 rounded-lg shadow space-y-2 text-sm">
+                        <div class="flex justify-between"><span>Subtotal Produk</span><span id="checkout-subtotal">-</span></div>
+                        <div class="flex justify-between"><span>Ongkos Kirim</span><span id="checkout-shipping">-</span></div>
+                        <div class="flex justify-between text-base font-bold border-t pt-2 mt-2"><span>Total</span><span id="checkout-total">-</span></div>
+                    </div>
+                </div>
+                
+                <div class="p-4 sticky-footer">
+                    <button id="place-order-btn" class="w-full bg-pink-500 text-white font-bold py-3 rounded-full hover:bg-pink-600">Buat Pesanan</button>
+                </div>
+            </div>
+        </main>
+        
+        <form id="input-area" class="input-area hidden">
+            <input id="message-input" type="text" placeholder="Pilih fitur untuk memulai" disabled aria-label="Message Input"/>
+            <button id="send-button" type="submit" class="send-button" disabled>Kirim</button>
+        </form>
+      </div>
+
+       <!-- Image Generator UI -->
+      <div id="image-generator-container" class="image-generator-container hidden">
+        <div class="image-header">
+           <button id="image-back-button" class="image-back-button">&larr;</button>
+           <h1 class="image-title">Generator Prompt Gambar</h1>
+        </div>
+        <p class="generator-description">Gunakan AI untuk membuat ide dan menyusun prompt teks yang siap dipakai di platform generator gambar.</p>
+        <div class="image-main-content">
+          <!-- Input Column -->
+          <div class="image-column">
+            <div class="image-input-group">
+              <label for="image-character-desc">Subjek Utama & Deskripsi</label>
+              <textarea id="image-character-desc" placeholder="Contoh: Seekor naga kristal megah di puncak gunung"></textarea>
+            </div>
+            <div class="image-input-group">
+              <label for="image-clothing-desc">Detail Tambahan & Gaya</label>
+              <textarea id="image-clothing-desc" placeholder="Contoh: Gaya seni digital, pencahayaan dramatis, fantasi epik"></textarea>
+            </div>
+
+            <div class="image-ai-box">
+              <h3 class="image-box-title">Generator Ide (AI)</h3>
+              <div class="image-input-group">
+                <label for="image-story-concept">Konsep Gambar</label>
+                <input type="text" id="image-story-concept" placeholder="Contoh: Kucing cyberpunk di gang neon">
+              </div>
+              <button id="image-generate-scenes-btn" class="image-button primary">
+                <span id="image-generate-btn-content">Buat Ide Detail</span>
+                <span id="image-generate-btn-loading" class="hidden">Memproses...</span>
+              </button>
+              <p id="image-error-message"></p>
+            </div>
+
+            <h3 class="image-section-title">4 Detail Spesifik</h3>
+            <div class="image-scenes-grid">
+              <div class="image-input-group"><label for="image-scene-1">Detail 1 (cth: Aksi)</label><input type="text" id="image-scene-1" class="image-scene-input" placeholder="Contoh: Menghembuskan api biru"></div>
+              <div class="image-input-group"><label for="image-scene-2">Detail 2 (cth: Latar)</label><input type="text" id="image-scene-2" class="image-scene-input" placeholder="Contoh: Langit malam berbintang"></div>
+              <div class="image-input-group"><label for="image-scene-3">Detail 3 (cth: Warna)</label><input type="text" id="image-scene-3" class="image-scene-input" placeholder="Contoh: Palet warna ungu dan emas"></div>
+              <div class="image-input-group"><label for="image-scene-4">Detail 4 (cth: Komposisi)</label><input type="text" id="image-scene-4" class="image-scene-input" placeholder="Contoh: Close-up shot, pandangan tajam"></div>
+            </div>
+          </div>
+          <!-- Output Column -->
+          <div class="image-column">
+            <div class="image-output-box">
+              <div class="image-output-header">
+                <h3 class="image-output-title">Prompt Gambar Final</h3>
+                <button id="image-copy-btn" class="image-button secondary"><span id="image-copy-btn-default">Salin</span><span id="image-copy-btn-success" class="hidden">Tersalin!</span></button>
+              </div>
+              <div class="image-output-content"><pre id="image-prompt-output"></pre></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DALL-E Generator UI -->
+      <div id="dalle-generator-container" class="dalle-generator-container hidden">
+        <div class="dalle-header"><button id="dalle-back-button" class="dalle-back-button">&larr;</button><h1 class="dalle-title">Generator Kolase DALL-E</h1></div>
+        <p class="generator-description">Gunakan AI untuk merancang 4 adegan konsisten yang akan digabungkan menjadi sebuah prompt kolase untuk DALL-E.</p>
+        <div class="dalle-main-content">
+          <div class="dalle-column">
+            <div class="dalle-input-group"><label for="dalle-character-desc">Deskripsi Karakter</label><textarea id="dalle-character-desc" placeholder="Contoh: wanita muda Indonesia, rambut hitam panjang"></textarea></div>
+            <div class="dalle-input-group"><label for="dalle-clothing-desc">Deskripsi Pakaian & Aksesoris</label><textarea id="dalle-clothing-desc" placeholder="Contoh: kemeja batik modern, celana jeans biru"></textarea></div>
+            <div class="dalle-ai-box">
+              <h3 class="dalle-box-title">Generator Ide Adegan (AI)</h3>
+              <div class="dalle-input-group"><label for="dalle-story-concept">Konsep Cerita</label><input type="text" id="dalle-story-concept" placeholder="Contoh: Seorang programmer menemukan bug di malam hari"></div>
+              <button id="dalle-generate-scenes-btn" class="dalle-button primary"><span id="dalle-generate-btn-content">Buat Ide Adegan</span><span id="dalle-generate-btn-loading" class="hidden">Memproses...</span></button>
+              <p id="dalle-error-message"></p>
+            </div>
+            <h3 class="dalle-section-title">Deskripsi 4 Adegan</h3>
+            <div class="dalle-scenes-grid">
+              <div class="dalle-input-group"><label for="dalle-scene-1">Adegan 1</label><input type="text" id="dalle-scene-1" class="dalle-scene-input" placeholder="Detail untuk adegan 1..."></div>
+              <div class="dalle-input-group"><label for="dalle-scene-2">Adegan 2</label><input type="text" id="dalle-scene-2" class="dalle-scene-input" placeholder="Detail untuk adegan 2..."></div>
+              <div class="dalle-input-group"><label for="dalle-scene-3">Adegan 3</label><input type="text" id="dalle-scene-3" class="dalle-scene-input" placeholder="Detail untuk adegan 3..."></div>
+              <div class="dalle-input-group"><label for="dalle-scene-4">Adegan 4</label><input type="text" id="dalle-scene-4" class="dalle-scene-input" placeholder="Detail untuk adegan 4..."></div>
+            </div>
+          </div>
+          <div class="dalle-column">
+            <div class="dalle-output-box">
+              <div class="dalle-output-header">
+                <h3 class="dalle-output-title">Prompt Kolase untuk DALL-E</h3>
+                <button id="dalle-copy-btn" class="dalle-button secondary"><span id="dalle-copy-btn-default">Salin</span><span id="dalle-copy-btn-success" class="hidden">Tersalin!</span></button>
+              </div>
+              <div class="dalle-output-content"><pre id="dalle-prompt-output"></pre></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VEO Generator UI -->
+      <div id="veo-generator-container" class="veo-generator-container hidden">
+        <div class="veo-header"><button id="veo-back-button" class="veo-back-button">&larr;</button><h1 class="veo-title">Generator Video VEO</h1></div>
+        <p class="generator-description">Gunakan AI untuk merancang 4 adegan berurutan yang akan digabungkan menjadi sebuah prompt video sinematik untuk VEO.</p>
+        <div class="veo-main-content">
+          <div class="veo-column">
+            <div class="veo-input-group"><label for="veo-character-desc">Deskripsi Karakter</label><textarea id="veo-character-desc" placeholder="Contoh: wanita muda Indonesia, rambut hitam panjang"></textarea></div>
+            <div class="veo-input-group"><label for="veo-clothing-desc">Deskripsi Pakaian & Aksesoris</label><textarea id="veo-clothing-desc" placeholder="Contoh: kemeja batik modern, celana jeans biru"></textarea></div>
+            <div class="veo-ai-box">
+              <h3 class="veo-box-title">Generator Ide Adegan (AI)</h3>
+              <div class="veo-input-group"><label for="veo-story-concept">Konsep Cerita</label><input type="text" id="veo-story-concept" placeholder="Contoh: Sebuah drone terbang melintasi lanskap kota futuristik"></div>
+              <button id="veo-generate-scenes-btn" class="veo-button primary"><span id="veo-generate-btn-content">Buat Ide Adegan</span><span id="veo-generate-btn-loading" class="hidden">Memproses...</span></button>
+              <p id="veo-error-message"></p>
+            </div>
+            <h3 class="veo-section-title">Deskripsi 4 Adegan Video</h3>
+            <div class="veo-scenes-grid">
+              <div class="veo-input-group"><label for="veo-scene-1">Adegan 1</label><input type="text" id="veo-scene-1" class="veo-scene-input" placeholder="Detail untuk adegan 1..."></div>
+              <div class="veo-input-group"><label for="veo-scene-2">Adegan 2</label><input type="text" id="veo-scene-2" class="veo-scene-input" placeholder="Detail untuk adegan 2..."></div>
+              <div class="veo-input-group"><label for="veo-scene-3">Adegan 3</label><input type="text" id="veo-scene-3" class="veo-scene-input" placeholder="Detail untuk adegan 3..."></div>
+              <div class="veo-input-group"><label for="veo-scene-4">Adegan 4</label><input type="text" id="veo-scene-4" class="veo-scene-input" placeholder="Detail untuk adegan 4..."></div>
+            </div>
+          </div>
+          <div class="veo-column">
+            <div class="veo-output-box">
+              <div class="veo-output-header">
+                <h3 class="veo-output-title">Prompt Video untuk VEO</h3>
+                <button id="veo-copy-btn" class="veo-button secondary"><span id="veo-copy-btn-default">Salin</span><span id="veo-copy-btn-success" class="hidden">Tersalin!</span></button>
+              </div>
+              <div class="veo-output-content"><pre id="veo-prompt-output"></pre></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Panel UI -->
+      <div id="admin-panel-container" class="admin-panel-container hidden">
+        <div class="admin-header">Panel Admin</div>
+        <div class="admin-tabs">
+          <button class="admin-tab-btn active" data-tab="orders">Pesanan</button>
+          <button class="admin-tab-btn" data-tab="products">Produk</button>
+          <button class="admin-tab-btn" data-tab="subscriptions">Langganan</button>
+          <button class="admin-tab-btn" data-tab="deposits">Deposit</button>
+          <button class="admin-tab-btn" data-tab="withdrawals">Penarikan</button>
+          <button class="admin-tab-btn" data-tab="users">Pengguna</button>
+          <button class="admin-tab-btn" data-tab="notifications">Notifikasi</button>
+          <button class="admin-tab-btn" data-tab="bot">Bot</button>
+        </div>
+        <div class="admin-content">
+          <div id="admin-tab-orders" class="admin-tab-content"></div>
+          <div id="admin-tab-products" class="admin-tab-content hidden"></div>
+          <div id="admin-tab-subscriptions" class="admin-tab-content hidden"></div>
+          <div id="admin-tab-deposits" class="admin-tab-content hidden"></div>
+          <div id="admin-tab-withdrawals" class="admin-tab-content hidden"></div>
+          <div id="admin-tab-users" class="admin-tab-content hidden"></div>
+          <div id="admin-tab-notifications" class="admin-tab-content hidden">
+            <form id="notification-form" class="notification-form">
+              <label for="notification-message">Pesan Notifikasi untuk Semua User:</label>
+              <textarea id="notification-message" rows="3" placeholder="Tulis pesan..."></textarea>
+              <button type="submit">Kirim Notifikasi</button>
+            </form>
+          </div>
+          <div id="admin-tab-bot" class="admin-tab-content hidden">
+            <h3>Manajemen Bot WhatsApp</h3>
+            <p>Bot WhatsApp berjalan sebagai proses server terpisah.</p>
+            <h4>Cara Menjalankan Bot:</h4>
+            <ol>
+                <li>Buka terminal baru di direktori proyek Anda.</li>
+                <li>Jalankan perintah: <code>npm run start:bot</code></li>
+                <li>Sebuah kode QR akan muncul di terminal tersebut.</li>
+                <li>Buka aplikasi WhatsApp di ponsel yang ingin Anda jadikan bot.</li>
+                <li>Masuk ke <strong>Menu</strong> > <strong>Perangkat Tertaut</strong> > <strong>Tautkan Perangkat</strong>.</li>
+                <li>Pindai kode QR yang ada di terminal.</li>
+                <li>Tunggu beberapa saat hingga muncul pesan "Bot WhatsApp siap dan terhubung!" di terminal.</li>
+            </ol>
+            <p>Untuk menghentikan bot, cukup tutup proses terminal tersebut (biasanya dengan menekan <code>CTRL + C</code>).</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal-overlay" class="modal-overlay">
+      <div class="modal-content">
+        <h2>Login ALTOBOT</h2>
+        <p>Masukkan nomor WhatsApp Anda untuk melanjutkan.</p>
+        <form id="login-form">
+            <div class="form-group">
+                <label for="phone-number">Nomor Telepon (Format: +628...)</label>
+                <input type="tel" id="phone-number" name="phoneNumber" placeholder="+6281234567890" required>
+            </div>
+            <div id="recaptcha-container"></div>
+            <button type="submit" id="sign-in-button" class="modal-button">Kirim Kode Verifikasi</button>
+        </form>
+        <form id="verify-form" class="hidden">
+            <div class="form-group">
+                <label for="verification-code">Kode Verifikasi</label>
+                <input type="text" id="verification-code" name="verificationCode" required>
+            </div>
+            <button type="submit" id="verify-code-button" class="modal-button">Verifikasi & Login</button>
+        </form>
+        <p id="login-error" class="error-message"></p>
+        <p class="admin-contact">Bermasalah saat login? <a href="mailto:altomediaindonesia@gmail.com">Hubungi Admin</a></p>
+      </div>
+    </div>
+
+    <!-- User Wallet Modal -->
+    <div id="wallet-modal-overlay" class="modal-overlay hidden">
+      <div class="modal-content">
+        <button id="close-wallet-btn" class="modal-close-button">&times;</button>
+        <h2>Dompet Anda</h2>
+        <div class="wallet-section">
+          <h3>Klaim Bonus Harian</h3>
+          <p>Dapatkan bonus harian Rp 200 setiap hari!</p>
+          <button id="claim-bonus-btn" class="modal-button">Klaim Bonus (Rp 200)</button>
+        </div>
+        <div class="wallet-section">
+            <h3>Deposit Saldo</h3>
+            <p>Lakukan pembayaran via QRIS dan konfirmasi di bawah.</p>
+            <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgHwO_-Mp4mmE5tIQgvrs8ZzsUiKwMWROUa8XAMFdKpYGzqxAXR9ciCYRZ9LBt-i1ukxzhTVQw_mcKbCm5jzFe6vySjmowjplpTMJBwV5HVfETSH6WwqlWHY2BEn_rMJn4jXXRX5ylMRwDGPssCFolj5akwy1Ny-Y3_JHFQZK3Jdf4HzaFwuBRXqwcDVhI/s407/qris.jpg" alt="QRIS Payment Code" class="qris-image">
+            <form id="deposit-form" class="payment-form">
+                <div class="form-group"><label for="deposit-amount">Jumlah Deposit (Rp)</label><input type="number" id="deposit-amount" name="depositAmount" required></div>
+                <div class="form-group"><label for="deposit-bank-name">Nama Bank</label><input type="text" id="deposit-bank-name" name="bankName" required></div>
+                <div class="form-group"><label for="deposit-sender-name">Nama Pengirim</label><input type="text" id="deposit-sender-name" name="senderName" required></div>
+                <button type="submit" class="modal-button">Kirim Konfirmasi Deposit</button>
+            </form>
+        </div>
+        <div class="wallet-section">
+          <h3>Withdraw Saldo</h3>
+          <form id="withdraw-form" class="payment-form">
+            <div class="form-group">
+              <label for="withdraw-amount">Jumlah Penarikan (Rp)</label>
+              <input type="number" id="withdraw-amount" name="withdrawAmount" required>
+            </div>
+            <button type="submit" class="modal-button">Ajukan Penarikan</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Subscription Purchase Modal -->
+    <div id="subscription-modal-overlay" class="modal-overlay hidden">
+      <div id="subscription-modal-content" class="modal-content">
+          <button id="close-subscription-modal-btn" class="modal-close-button">&times;</button>
+          <h2>Pilih Paket Langganan</h2>
+          <p>Dapatkan akses ke fitur premium kami dengan berlangganan. Pembelian akan menggunakan saldo dompet Anda.</p>
+          <div class="packages-container">
+            <div class="package-card" data-plan="basic">
+              <h3>Paket Basic</h3>
+              <div class="price">Rp 20.000</div>
+              <div class="duration">Akses Penuh Selama 7 Hari</div>
+            </div>
+            <div class="package-card" data-plan="premium">
+              <h3>Paket Premium</h3>
+              <div class="price">Rp 50.000</div>
+              <div class="duration">Akses Penuh Selama 30 Hari</div>
+            </div>
+          </div>
+      </div>
+    </div>
+
+    <!-- Order Form Modal (DEPRECATED but kept for reference) -->
+    <div id="order-form-overlay" class="modal-overlay hidden">
+      <div class="modal-content">
+        <button id="close-order-form-btn" class="modal-close-button">&times;</button>
+        <h2>Formulir Pemesanan</h2>
+        <div id="order-product-info" class="order-product-info">
+          <!-- Order product details will be rendered here -->
+        </div>
+
+        <div class="payment-summary">
+          <h3>Rincian Pembayaran</h3>
+          <div class="summary-box">
+            <div class="summary-item">
+              <span>Subtotal</span>
+              <span id="order-detail-subtotal">-</span>
+            </div>
+            <div class="summary-item">
+              <span>Ongkos Kirim</span>
+              <span id="order-detail-shipping">-</span>
+            </div>
+            <div class="summary-item total">
+              <span>Total</span>
+              <span id="order-detail-total">-</span>
+            </div>
+          </div>
+        </div>
+
+        <form id="order-form" class="payment-form">
+            <p>Silakan lakukan pembayaran ke QRIS di bawah, <strong>unggah bukti transfer</strong>, lalu isi data dan konfirmasi pesanan.</p>
+            <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgHwO_-Mp4mmE5tIQgvrs8ZzsUiKwMWROUa8XAMFdKpYGzqxAXR9ciCYRZ9LBt-i1ukxzhTVQw_mcKbCm5jzFe6vySjmowjplpTMJBwV5HVfETSH6WwqlWHY2BEn_rMJn4jXXRX5ylMRwDGPssCFolj5akwy1Ny-Y3_JHFQZK3Jdf4HzaFwuBRXqwcDVhI/s407/qris.jpg" alt="QRIS Payment Code" class="qris-image">
+            <div class="form-group">
+                <label for="payment-proof-input">Unggah Bukti Pembayaran (Gambar)</label>
+                <input type="file" id="payment-proof-input" name="paymentProof" accept="image/png, image/jpeg, image/jpg" class="file-input-hidden" required>
+                <label for="payment-proof-input" class="file-input-label">Pilih File...</label>
+                <img id="payment-proof-preview" class="payment-proof-preview hidden" alt="Pratinjau Bukti Pembayaran"/>
+            </div>
+            <div class="form-group"><label for="order-customer-name">Nama Lengkap</label><input type="text" id="order-customer-name" name="customerName" required></div>
+            <div class="form-group" id="shipping-address-group">
+              <label for="order-shipping-address">Alamat Pengiriman Lengkap</label>
+              <textarea id="order-shipping-address" name="shippingAddress" rows="3" required></textarea>
+            </div>
+            <div class="form-group"><label for="order-phone-number">Nomor Telepon</label><input type="tel" id="order-phone-number" name="phoneNumber" readonly></div>
+            <button type="submit" id="confirm-order-btn" class="modal-button">Konfirmasi Pesanan</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Order History Modal -->
+    <div id="order-history-overlay" class="modal-overlay hidden">
+      <div class="modal-content">
+        <button id="close-order-history-btn" class="modal-close-button">&times;</button>
+        <h2>Riwayat Pesanan Anda</h2>
+        <div id="order-history-list" class="order-history-list">
+          <p>Memuat riwayat...</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Product Management Modal -->
+    <div id="product-form-overlay" class="modal-overlay hidden">
+      <div class="modal-content">
+        <button id="close-product-form-btn" class="modal-close-button">&times;</button>
+        <h2 id="product-form-title">Tambah Produk Baru</h2>
+        <form id="product-form" class="payment-form">
+          <input type="hidden" id="product-id">
+          <div class="form-group">
+            <label for="product-category">Kategori Produk</label>
+            <select id="product-category" required>
+              <option value="standard">Standard (Fisik)</option>
+              <option value="fashion">Fashion</option>
+              <option value="digital">Digital</option>
+            </select>
+          </div>
+          <div class="form-group"><label for="product-name">Nama Produk</label><input type="text" id="product-name" required></div>
+          <div class="form-group"><label for="product-price">Harga (Rp)</label><input type="number" id="product-price" required></div>
+          <div class="form-group"><label for="product-description">Deskripsi</label><textarea id="product-description" rows="3" required></textarea></div>
+          <div class="form-group"><label for="product-imageUrl">URL Gambar</label><input type="url" id="product-imageUrl" required></div>
+          <div id="fashion-fields" class="hidden">
+            <div class="form-group"><label for="product-colors">Pilihan Warna (pisahkan dengan koma)</label><input type="text" id="product-colors" placeholder="Merah,Biru,Hitam"></div>
+            <div class="form-group"><label for="product-sizes">Pilihan Ukuran (pisahkan dengan koma)</label><input type="text" id="product-sizes" placeholder="S,M,L,XL"></div>
+          </div>
+          <button type="submit" class="modal-button">Simpan Produk</button>
+        </form>
+      </div>
+    </div>
+
+
+    <script type="module" src="index.tsx"></script>
+  </body>
+</html>
