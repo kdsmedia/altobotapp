@@ -9,25 +9,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="index.css" />
     <script type="importmap">
-{
-  "imports": {
-    "@google/genai": "https://esm.sh/@google/genai@^1.13.0",
-    "firebase/app": "https://esm.sh/firebase@10.12.2/app",
-    "firebase/auth": "https://esm.sh/firebase@10.12.2/auth",
-    "firebase/firestore": "https://esm.sh/firebase@10.12.2/firestore",
-    "firebase/": "https://esm.sh/firebase@^12.1.0/",
-    "http": "https://esm.sh/http@^0.0.1-security",
-    "ws": "https://esm.sh/ws@^8.18.3",
-    "url": "https://esm.sh/url@^0.11.4",
-    "fs": "https://esm.sh/fs@^0.0.1-security",
-    "path": "https://esm.sh/path@^0.12.7",
-    "whatsapp-web.js": "https://esm.sh/whatsapp-web.js@^1.32.0",
-    "qrcode-terminal": "https://esm.sh/qrcode-terminal@^0.12.0"
-  }
-}
-</script>
+      {
+        "imports": {
+          "firebase/app": "https://esm.sh/firebase@10.12.2/app",
+          "firebase/auth": "https://esm.sh/firebase@10.12.2/auth",
+          "firebase/firestore": "https://esm.sh/firebase@10.12.2/firestore",
+          "firebase/storage": "https://esm.sh/firebase@10.12.2/storage"
+        }
+      }
+    </script>
   </head>
   <body>
+    <!-- Konten HTML Anda yang sudah ada tetap sama -->
+    <!-- ... (seluruh isi <body> Anda dari file asli diletakkan di sini) ... -->
+
     <!-- Main App Container -->
     <div class="app-container">
       <header class="chat-header">
@@ -211,7 +206,7 @@
         </form>
       </div>
 
-       <!-- Image Generator UI -->
+        <!-- Image Generator UI -->
       <div id="image-generator-container" class="image-generator-container hidden">
         <div class="image-header">
            <button id="image-back-button" class="image-back-button">&larr;</button>
